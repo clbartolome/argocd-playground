@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ArgoCD Workshop App</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .banner-feature {
+            padding: 10px;
+            text-align: center;
+            color: white;
+            font-size: 1.2rem;
+        }
+        .feature-on {
+            background-color: #28a745;
+        }
+        .feature-off {
+            background-color: #dc3545;
+        }
+    </style>
+</head>
+<body class="bg-light">
+<div class="container py-5">
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h1 id="appName">Loading...</h1>
+            <p><strong>Version:</strong> <span id="appVersion">-</span></p>
+            <p><strong>Environment:</strong> <span id="environment">-</span></p>
+            <p><strong>Pod:</strong> <span id="podName">-</span></p>
+            <p><strong>Secret:</strong> <span id="secret">-</span></p>
+            <div id="featureBanner" class="banner-feature">Checking feature...</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    fetch('/api/info')
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById('appName').textContent = data.appName;
+            document.getElementById('appVersion').textContent = data.appVersion;
+            document.getElementById('environment').textContent = data.environment;
+            document.getElementById('podName').textContent = data.podName;
+            document.getElementById('secret').textContent = data.secret;
+
+            const banner = document.getElementById('featureBanner');
+            banner.classList.add(data.featureToggle ? 'feature-on' : 'feature-off');
+            banner.textContent = data.featureToggle ? '🚀 Feature ENABLED 🚀' : '❌ Feature DISABLED ❌';
+        })
+        .catch(e => console.error(e));
+</script>
+</body>
+</html>
