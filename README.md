@@ -8,13 +8,14 @@
 Workshop details:
 
 [1. Review demo application and create image](#1-review-demo-application-and-create-image)
+
 [2. Deploy into OpenShift using Console](#2-deploy-into-openshift)
-- Generate yaml files and upload to gitea:
-    - Create repo
-    - Clone repo
-    - Extract files (cleaning up)
-    - Push files
-- Create argo app
+
+[3. Create deploy repository](#3-create-deploy-repository)
+
+[4. Create argo app](#4-create-argo-app)
+
+
 - Helm Review
 - Kustomize Review
 - Vault Review
@@ -142,7 +143,7 @@ oc scale deploy/demo-app --replicas=3
 oc get pods
 
 # Test pods
-curl demo-app-demo-app.<domain>/api/info
+curl demo-app-demo-app.apps.<domain>/api/info
 ```
 
 Create a configmap with 'public' configuration:
@@ -188,3 +189,182 @@ oc get pods
 
 # Review web
 ```
+
+Set liveness and readyness probes:
+
+```sh
+# Set liveness
+oc set probe deploy/demo-app --liveness --get-url=http://:8080/q/health/live
+
+
+# Set readiness
+oc set probe deploy/demo-app --readiness --get-url=http://:8080/q/health/ready
+```
+
+## 3. Create deploy repository
+
+Access gitea:
+
+```sh
+# Get route
+oc get route gitea -n gitea
+
+# Access via web browser (user: gitea | pass: openshift)
+```
+
+Create a repository:
+- `+` (New Repository)
+- Configure:
+    - Repository Name: `demo-app-arg`
+    - Default Branch: `main`
+- Create
+
+Clone repository:
+
+```sh
+cd /tmp
+git clone https://gitea-gitea.apps.<domain>/gitea/demo-app-argo.git
+
+cd demo-app-argo.git 
+```
+
+Extract deployment and clean up:
+
+```sh
+oc get deploy demo-app -o yaml > deploy.yaml
+
+vi deploy.yaml
+# Clean up:
+# - metadata.namespace
+# - metadata.annotations
+# - metadata.creationTimestamp
+# - metadata.generation
+# - metadata.resourceVersion
+# - metadata.uid
+# - spec.template.metadata.annotations
+# - spec.template.metadata.creationTimestamp
+# - status
+
+# Update:
+# - container image to version 1.0
+# - container imagePullPolicy to Always
+```
+
+Extract service and clean up:
+
+```sh
+oc get svc demo-app -o yaml > svc.yaml
+
+vi svc.yaml
+# Clean up:
+# - metadata.namespace
+# - metadata.annotations
+# - metadata.creationTimestamp
+# - metadata.resourceVersion
+# - metadata.uid
+# - spec.clusterIP
+# - spec.clusterIPs
+# - spec.internalTrafficPolicy
+# - spec.ipFamilies
+# - spec.ipFamilyPolicy
+# - status
+```
+
+Extract route and clean up:
+
+```sh
+oc get route demo-app -o yaml > route.yaml
+
+vi route.yaml
+# Clean up:
+# - metadata.namespace
+# - metadata.annotations
+# - metadata.creationTimestamp
+# - metadata.resourceVersion
+# - metadata.uid
+# - spec.host
+# - status
+```
+
+Extract cm and clean up:
+
+```sh
+oc get cm demo-app-config -o yaml > cm.yaml
+
+vi cm.yaml
+# Clean up:
+# - metadata.namespace
+# - metadata.creationTimestamp
+# - metadata.resourceVersion
+# - metadata.uid
+```
+
+Extract secret and clean up:
+
+```sh
+oc get secret demo-app-sec -o yaml > secret.yaml
+
+vi secret.yaml
+# Clean up:
+# - metadata.namespace
+# - metadata.creationTimestamp
+# - metadata.resourceVersion
+# - metadata.uid
+```
+
+Commit and push changes:
+
+```sh
+git add .
+git commit -m "demo app resources"
+git push
+```
+
+## 4. Create argo app
+
+Access ArgoCD in `https://openshift-gitops-server-openshift-gitops.apps.<domain>/applications`
+
+Create argoCD application:
+
+- `+ New App`
+- General:
+    - Application Name: demo-app-argo
+    - Project Name: default
+    - Sync Policy: Automatic
+    - Mark - Prune Resources 
+    - Mark - Self Heal 
+- Source:
+    - Repository URL: http://gitea.gitea.svc.cluster.local:3000/gitea/demo-app-argo
+    - Revision: main
+    - Path: .
+- Destination:
+    - Cluster URL: https://kubernetes.default.svc
+    - Namespace: argo-app
+- `Create`
+
+Alternatively use this yaml:
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: demo-app-argo
+spec:
+  destination:
+    name: ''
+    namespace: argo-app
+    server: https://kubernetes.default.svc
+  source:
+    path: '.'
+    repoURL: http://gitea.gitea.svc.cluster.local:3000/gitea/demo-app-argo
+    targetRevision: main
+  project: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+```
+
+Play with applications resources (replicas, configuration,...) and see how ArgoCD handles drifts.
+
+
