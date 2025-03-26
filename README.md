@@ -15,6 +15,8 @@ Workshop details:
 
 [4. Create argo app](#4-create-argo-app)
 
+[5. Helm Review](#5-helm-review)
+
 
 - Helm Review
 - Kustomize Review
@@ -150,7 +152,7 @@ Create a configmap with 'public' configuration:
 
 ```sh
 # Create CM
-oc create configmap demo-app-config --from-literal=APP_NAME="Demo App" --from-literal=APP_VERSION="1.0" --from-literal=APP_ENVIRONMENT="OpenShift (demo-app namespace)" 
+oc create configmap demo-app-config --from-literal=APP_NAME="Demo App" --from-literal=APP_VERSION="1.0" --from-literal=APP_ENVIRONMENT="OpenShift (argo-demo-app namespace)" 
 
 # Review CM
 oc get cm
@@ -215,17 +217,18 @@ oc get route gitea -n gitea
 Create a repository:
 - `+` (New Repository)
 - Configure:
-    - Repository Name: `demo-app-arg`
+    - Repository Name: `demo-app-argo`
     - Default Branch: `main`
 - Create
 
 Clone repository:
 
 ```sh
-cd /tmp
+mkdir /tmp/argo-review
+cd /tmp/argo-review
 git clone https://gitea-gitea.apps.<domain>/gitea/demo-app-argo.git
 
-cd demo-app-argo.git 
+cd demo-app-argo
 ```
 
 Extract deployment and clean up:
@@ -297,6 +300,9 @@ vi cm.yaml
 # - metadata.creationTimestamp
 # - metadata.resourceVersion
 # - metadata.uid
+
+# Update:
+# - variables values
 ```
 
 Extract secret and clean up:
@@ -334,7 +340,7 @@ Create argoCD application:
     - Mark - Prune Resources 
     - Mark - Self Heal 
 - Source:
-    - Repository URL: http://gitea.gitea.svc.cluster.local:3000/gitea/demo-app-argo
+    - Repository URL: http://gitea.gitea.svc.cluster.local:3000/gitea/demo-app-argo.git
     - Revision: main
     - Path: .
 - Destination:
@@ -356,7 +362,7 @@ spec:
     server: https://kubernetes.default.svc
   source:
     path: '.'
-    repoURL: http://gitea.gitea.svc.cluster.local:3000/gitea/demo-app-argo
+    repoURL: http://gitea.gitea.svc.cluster.local:3000/gitea/demo-app-argo.git
     targetRevision: main
   project: default
   syncPolicy:
@@ -366,5 +372,202 @@ spec:
 ```
 
 Play with applications resources (replicas, configuration,...) and see how ArgoCD handles drifts.
+
+## 5. Helm Review
+
+Clone the repository and review `basic-config` chart:
+
+```sh
+cd /tmp/argo-review
+
+git clone https://github.com/clbartolome/helm-charts
+
+cd helm-charts/charts/basic-config
+
+code.
+```
+
+Create a `values.yaml`:
+
+```yaml
+name: helm-demo
+
+image: quay.io/calopezb/argo-demo-app:1.0
+
+replicas: 2
+
+port: 8080
+
+routeEnabled: true
+
+config:
+  enabled: true
+  data:
+    APP_ENVIRONMENT: "OpenShift (argo-helm)"
+    APP_NAME: "Demo App using Helm"
+    APP_VERSION: "1.0"
+
+secret:
+  enabled: true
+  data:
+    APP_SECRET: "super secret value from helm"
+```
+
+Generate the template using helm:
+
+```sh
+helm template -f values.yaml .
+```
+
+Deploy Application using helm and play with it:
+
+```sh
+# Access helm-demo project
+oc project argo-helm
+
+# Install app and review in OpenShift
+helm install -f values.yaml helm-demo .
+
+# List releases
+helm list
+
+# Upgrade a release
+helm upgrade helm-demo . --set replicas=4
+
+# Rollback a release
+helm list
+helm rollback helm-demo 1
+
+# Uninstall a release
+helm uninstall helm-demo
+helm list
+```
+
+Access gitea:
+
+```sh
+# Get route
+oc get route gitea -n gitea
+
+# Access via web browser (user: gitea | pass: openshift)
+```
+
+Create a repository:
+- `+` (New Repository)
+- Configure:
+  - Repository Name: `demo-app-helm`
+  - Default Branch: `main`
+- Create
+
+Clone repository:
+
+```sh
+cd /tmp/argo-review
+git clone https://gitea-gitea.apps.<domain>/gitea/demo-app-helm.git
+
+cd demo-app-helm
+```
+
+Create a `Chart.yaml` file to reference the chart (charts are generated and exposed by github static files):
+
+```yaml
+apiVersion: v2
+name: demo-app-helm
+version: 1.0.0
+
+dependencies:
+  - name: basic-config
+    version: 1.0.0
+    repository: https://clbartolome.github.io/helm-charts
+```
+
+Create a values file:
+
+Create a `values.yaml`:
+
+```yaml
+basic-config:
+
+  name: demo-app-helm
+
+  image: quay.io/calopezb/argo-demo-app:1.0
+
+  replicas: 3
+
+  port: 8080
+
+  routeEnabled: true
+
+  config:
+    enabled: true
+    data:
+      APP_ENVIRONMENT: "OpenShift (argo-helm)"
+      APP_NAME: "Demo App using Helm and Argo"
+      APP_VERSION: "1.0"
+
+  secret:
+    enabled: true
+    data:
+      APP_SECRET: "super secret value from helm in argo"
+```
+
+Commit and push changes:
+
+```sh
+git add .
+git commit -m "chart reference and values"
+git push
+```
+
+Create argoCD application:
+
+- `+ New App`
+- General:
+  - Application Name: demo-app-helm
+  - Project Name: default
+  - Sync Policy: Automatic
+  - Mark - Prune Resources 
+  - Mark - Self Heal 
+- Source:
+  - Repository URL: http://gitea.gitea.svc.cluster.local:3000/gitea/demo-app-helm.git
+  - Revision: main
+  - Path: .
+- Destination:
+  - Cluster URL: https://kubernetes.default.svc
+  - Namespace: argo-helm
+- Helm:
+  - Values files: values.yaml
+- `Create`
+
+Alternatively use this yaml:
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: demo-app-helm
+spec:
+  destination:
+    name: ''
+    namespace: argo-helm
+    server: https://kubernetes.default.svc
+  source:
+    path: .
+    repoURL: http://gitea.gitea.svc.cluster.local:3000/gitea/demo-app-helm.git
+    targetRevision: main
+    helm:
+      valueFiles:
+        - values.yaml
+  project: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+```
+
+Play with helm values in gitea repo
+
+
+
 
 

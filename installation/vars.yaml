@@ -3,6 +3,7 @@
 namespaces:
   - name: demo-app
   - name: argo-app
+  - name: argo-helm
 
 kubeconfig:
   ocp_domain: "{{ ocp_host }}"
@@ -18,6 +19,7 @@ argo:
   ocp_domain: "{{ ocp_host }}"
   target_namespaces: # Namespaces where ArgoCD will create resources
     - name: argo-app
+    - name: argo-helm
   environment_repo_url: https://github.com/clbartolome/argocd-playground.git
   environment_repo_revision: master
   environment_path: environment/* # Will create an app for each directory in this path  
