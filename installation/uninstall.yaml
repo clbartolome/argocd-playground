@@ -1,0 +1,50 @@
+---
+- name: Uninstallation
+  hosts: localhost
+  gather_facts: false
+
+  tasks:
+
+    - name: Remove demo environment on ArgoCD
+      kubernetes.core.k8s:
+        state: absent
+        api_version: argoproj.io/v1alpha1
+        kind: ApplicationSet
+        namespace: openshift-gitops
+        name: environment
+
+    - name: Remove demo environment on ArgoCD
+      kubernetes.core.k8s:
+        state: absent
+        api_version: argoproj.io/v1alpha1
+        kind: Application
+        namespace: openshift-gitops
+        name: payment
+
+    - name: Small pause # (TODO: use argoCD instead of this sh**)
+      ansible.builtin.pause:
+        minutes: 1
+
+    - name: Delete Demo namespaces
+      kubernetes.core.k8s:
+        state: absent
+        definition:
+          apiVersion: project.openshift.io/v1
+          kind: Project
+          metadata:
+            name: "{{ namespace.name }}"
+      loop: "{{ namespaces }}"
+      loop_control:
+        loop_var: namespace
+
+    - name: Remove Gitea Namespace
+      kubernetes.core.k8s:
+        state: absent
+        definition:
+          apiVersion: project.openshift.io/v1
+          kind: Project
+          metadata:
+            name: gitea
+
+  vars_files:
+    - vars.yaml

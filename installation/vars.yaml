@@ -1,0 +1,23 @@
+---
+# Required namespaces (operators namespaces must NOT be also included here)
+namespaces:
+  - name: demo-app
+  - name: argo-app
+
+kubeconfig:
+  ocp_domain: "{{ ocp_host }}"
+  ocp_api_token: "{{ api_token }}"
+
+gitea:
+  namespace: gitea
+  ocp_domain: "{{ ocp_host }}"
+  repositories: []
+  users: []
+
+argo:
+  ocp_domain: "{{ ocp_host }}"
+  target_namespaces: # Namespaces where ArgoCD will create resources
+    - name: argo-app
+  environment_repo_url: https://github.com/clbartolome/argocd-playground.git
+  environment_repo_revision: master
+  environment_path: environment/* # Will create an app for each directory in this path  

@@ -1,0 +1,33 @@
+---
+- name: Installation
+  hosts: localhost
+  gather_facts: false
+
+  tasks:
+
+    - name: Setup kubeconfig file
+      ansible.builtin.include_role:
+        name: demos.utils.kubeconfig
+
+    - name: Create Demo namespaces
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: project.openshift.io/v1
+          kind: Project
+          metadata:
+            name: "{{ namespace.name }}"
+      loop: "{{ namespaces }}"
+      loop_control:
+        loop_var: namespace
+
+    - name: Setup Gitea
+      ansible.builtin.include_role:
+        name: demos.utils.gitea
+
+    - name: Configure ArgoCD
+      ansible.builtin.include_role:
+        name: demos.utils.argocd
+
+  vars_files:
+    - vars.yaml

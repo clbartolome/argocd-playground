@@ -1,5 +1,10 @@
 # argocd-playground
 
+> [!IMPORTANT]  
+> Last tested versions: 
+> - OpenShift: 4.18.4
+> - OpenShift GitOps: 1.15.1
+
 Workshop details:
 
 [1. Review demo application and create image](#1-review-demo-application-and-create-image)
@@ -15,6 +20,65 @@ Workshop details:
 - Vault Review
 - App of apps
 - App Sets
+
+## Playground Setup
+
+### Pre-Requisites
+
+- Install **OpenShift GitOps** operator (default config)
+- Build Ansible Execution Environment Manually:
+
+```sh
+cd installation/ansible-navigator
+ansible-builder build -t argo-playground-ee:latest
+```
+
+### Install
+
+- Open a terminal
+
+- Login into OpenShift
+
+- Access installation->ansible-navigator: `cd installation/ansible-navigator`
+
+- Create environment vars for configuration (**update token**):
+
+```sh
+export OPENSHIFT_TOKEN=$(oc whoami --show-token)
+export CLUSTER_DOMAIN=$(oc whoami --show-server | sed 's~https://api\.~~' | sed 's~:.*~~')
+```
+
+- Run installation:
+
+```sh
+ansible-navigator run ../install.yaml -m stdout \
+    -e "ocp_host=$CLUSTER_DOMAIN" \
+    -e "api_token=$OPENSHIFT_TOKEN"
+```
+
+### Clean-up
+
+- Open a terminal
+
+- Login into OpenShift
+
+- Access installation->ansible-navigator: `cd installation/ansible-navigator`
+
+- Create environment vars for configuration (**update token**):
+
+```sh
+export OPENSHIFT_TOKEN=$(oc whoami --show-token)
+export CLUSTER_DOMAIN=$(oc whoami --show-server | sed 's~https://api\.~~' | sed 's~:.*~~')
+```
+
+- Run cleanup:
+
+```sh
+ansible-navigator run ../uninstall.yaml -m stdout \
+    -e "ocp_host=$CLUSTER_DOMAIN" \
+    -e "api_token=$OPENSHIFT_TOKEN"
+```
+
 
 ## 1. Review demo application and create image
 
@@ -53,7 +117,7 @@ Create a namespace and deploy image:
 
 ```sh
 # Create project
-oc new-project demo-app
+oc project demo-app
 
 # Deploy application and create a route
 oc new-app --image=quay.io/calopezb/argo-demo-app:1.0 --name=demo-app
