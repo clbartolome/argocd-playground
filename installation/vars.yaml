@@ -4,15 +4,48 @@ namespaces:
   - name: demo-app
   - name: argo-app
   - name: argo-helm
+  - name: argo-kustomize
+  - name: argo-bitwarden
+  - name: argo-app-of-apps
+  - name: argo-app-set
 
 kubeconfig:
   ocp_domain: "{{ ocp_host }}"
   ocp_api_token: "{{ api_token }}"
 
+bitwarden:
+  token: "{{ bw_token }}"
+  namespaces:
+    - argo-bitwarden
+
 gitea:
   namespace: gitea
   ocp_domain: "{{ ocp_host }}"
-  repositories: []
+  repositories:
+    - name: demo-app-of-apps
+      url: https://github.com/clbartolome/argocd-playground.git
+      branch: master
+      path: "repositories/demo-app-of-apps"
+    - name: demo-app-sets
+      url: https://github.com/clbartolome/argocd-playground.git
+      branch: master
+      path: "repositories/demo-app-sets"
+    - name: demo-argo
+      url: https://github.com/clbartolome/argocd-playground.git
+      branch: master
+      path: "repositories/demo-argo"
+    - name: demo-bitwarden
+      url: https://github.com/clbartolome/argocd-playground.git
+      branch: master
+      path: "repositories/demo-bitwarden"
+    - name: demo-helm
+      url: https://github.com/clbartolome/argocd-playground.git
+      branch: master
+      path: "repositories/demo-helm"
+    - name: demo-kustomize
+      url: https://github.com/clbartolome/argocd-playground.git
+      branch: master
+      path: "repositories/demo-kustomize"
   users: []
 
 argo:
@@ -20,6 +53,11 @@ argo:
   target_namespaces: # Namespaces where ArgoCD will create resources
     - name: argo-app
     - name: argo-helm
+    - name: argo-kustomize
+    - name: argo-bitwarden
+    - name: argo-app-of-apps
+    - name: argo-app-set
   environment_repo_url: https://github.com/clbartolome/argocd-playground.git
   environment_repo_revision: master
   environment_path: environment/* # Will create an app for each directory in this path  
+

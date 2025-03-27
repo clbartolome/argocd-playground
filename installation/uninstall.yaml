@@ -5,6 +5,10 @@
 
   tasks:
 
+    - name: Setup kubeconfig file
+      ansible.builtin.include_role:
+        name: demos.utils.kubeconfig
+
     - name: Remove demo environment on ArgoCD
       kubernetes.core.k8s:
         state: absent
@@ -13,17 +17,24 @@
         namespace: openshift-gitops
         name: environment
 
-    - name: Remove demo environment on ArgoCD
-      kubernetes.core.k8s:
-        state: absent
-        api_version: argoproj.io/v1alpha1
-        kind: Application
-        namespace: openshift-gitops
-        name: payment
+    # - name: Remove demo environment on ArgoCD
+    #   kubernetes.core.k8s:
+    #     state: absent
+    #     api_version: argoproj.io/v1alpha1
+    #     kind: Application
+    #     namespace: openshift-gitops
+    #     name: payment
 
-    - name: Small pause # (TODO: use argoCD instead of this sh**)
-      ansible.builtin.pause:
-        minutes: 1
+    # - name: Small pause # (TODO: use argoCD instead of this sh**)
+    #   ansible.builtin.pause:
+    #     minutes: 1
+
+    - name: Remove Bitwarden
+      ansible.builtin.include_role:
+        name: demos.utils.bitwarden
+      vars:
+        bitwarden_operation: uninstall
+
 
     - name: Delete Demo namespaces
       kubernetes.core.k8s:

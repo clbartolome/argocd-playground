@@ -1,0 +1,27 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- ../../base
+
+labels:
+- pairs:
+    environment: dev
+
+patches:
+- path: deploy-replicas-patch.yaml
+
+configMapGenerator:
+- name: demo-app-config
+  envs:
+  - config.env
+
+secretGenerator:
+- name: demo-app-sec
+  envs:
+  - secured.env
+
+images:
+- name: argo-demo-app
+  newName: quay.io/calopezb/argo-demo-app
+  newTag: "1.0"

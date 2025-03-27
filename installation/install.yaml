@@ -21,6 +21,12 @@
       loop_control:
         loop_var: namespace
 
+    - name: Configure Bitwarden
+      ansible.builtin.include_role:
+        name: demos.utils.bitwarden
+      vars:
+        bitwarden_operation: install
+
     - name: Setup Gitea
       ansible.builtin.include_role:
         name: demos.utils.gitea
