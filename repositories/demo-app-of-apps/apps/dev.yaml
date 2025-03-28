@@ -1,0 +1,21 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: demo-dev
+spec:
+  destination:
+    name: ''
+    namespace: demo-dev
+    server: https://kubernetes.default.svc
+  source:
+    path: .
+    repoURL: http://gitea.gitea.svc.cluster.local:3000/gitea/demo-app-of-apps.git
+    targetRevision: master
+    helm:
+      valueFiles:
+        - values.yaml
+  project: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

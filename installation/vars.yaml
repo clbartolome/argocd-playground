@@ -2,12 +2,13 @@
 # Required namespaces (operators namespaces must NOT be also included here)
 namespaces:
   - name: demo-app
-  - name: argo-app
-  - name: argo-helm
-  - name: argo-kustomize
-  - name: argo-bitwarden
-  - name: argo-app-of-apps
-  - name: argo-app-set
+  - name: demo-argo
+  - name: demo-helm
+  - name: demo-kustomize
+  - name: demo-bitwarden
+  - name: demo-dev
+  - name: demo-test
+  - name: demo-prod
 
 kubeconfig:
   ocp_domain: "{{ ocp_host }}"
@@ -16,7 +17,7 @@ kubeconfig:
 bitwarden:
   token: "{{ bw_token }}"
   namespaces:
-    - argo-bitwarden
+    - demo-bitwarden
 
 gitea:
   namespace: gitea
@@ -25,38 +26,39 @@ gitea:
     - name: demo-app-of-apps
       url: https://github.com/clbartolome/argocd-playground.git
       branch: master
-      path: "repositories/demo-app-of-apps"
+      path: "/repositories/demo-app-of-apps"
     - name: demo-app-sets
       url: https://github.com/clbartolome/argocd-playground.git
       branch: master
-      path: "repositories/demo-app-sets"
+      path: "/repositories/demo-app-sets"
     - name: demo-argo
       url: https://github.com/clbartolome/argocd-playground.git
       branch: master
-      path: "repositories/demo-argo"
+      path: "/repositories/demo-argo"
     - name: demo-bitwarden
       url: https://github.com/clbartolome/argocd-playground.git
       branch: master
-      path: "repositories/demo-bitwarden"
+      path: "/repositories/demo-bitwarden"
     - name: demo-helm
       url: https://github.com/clbartolome/argocd-playground.git
       branch: master
-      path: "repositories/demo-helm"
+      path: "/repositories/demo-helm"
     - name: demo-kustomize
       url: https://github.com/clbartolome/argocd-playground.git
       branch: master
-      path: "repositories/demo-kustomize"
+      path: "/repositories/demo-kustomize"
   users: []
 
 argo:
   ocp_domain: "{{ ocp_host }}"
   target_namespaces: # Namespaces where ArgoCD will create resources
-    - name: argo-app
-    - name: argo-helm
-    - name: argo-kustomize
-    - name: argo-bitwarden
-    - name: argo-app-of-apps
-    - name: argo-app-set
+    - name: demo-app
+    - name: demo-helm
+    - name: demo-kustomize
+    - name: demo-bitwarden
+    - name: demo-dev
+    - name: demo-test
+    - name: demo-prod
   environment_repo_url: https://github.com/clbartolome/argocd-playground.git
   environment_repo_revision: master
   environment_path: environment/* # Will create an app for each directory in this path  

@@ -1,0 +1,23 @@
+basic-config:
+
+  name: demo-app-prod
+
+  image: quay.io/calopezb/argo-demo-app:1.0
+
+  replicas: 3
+
+  port: 8080
+
+  routeEnabled: true
+
+  config:
+    enabled: true
+    data:
+      APP_ENVIRONMENT: "OpenShift (demo-app-of-apps PROD)"
+      APP_NAME: "Demo App - PROD"
+      APP_VERSION: "1.0"
+
+  secret:
+    enabled: true
+    data:
+      APP_SECRET: "super secret value for PROD"

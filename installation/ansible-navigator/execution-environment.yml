@@ -11,5 +11,11 @@ dependencies:
       - name: https://github.com/clbartolome/demos.utils.git
         type: git
         version: main
+
+additional_build_steps:
+  prepend_base:
+    - RUN microdnf install -y tar gzip && curl -fsSL https://get.helm.sh/helm-v3.14.4-linux-amd64.tar.gz -o helm.tar.gz && tar -zxvf helm.tar.gz && mv linux-amd64/helm /usr/local/bin/helm && chmod +x /usr/local/bin/helm && rm -rf linux-amd64 helm.tar.gz && microdnf clean all
+
+
 options:
   package_manager_path: /usr/bin/microdnf

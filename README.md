@@ -222,8 +222,8 @@ Clone repository:
 
 ```sh
 # Create temporary folder, clean it up if exits
-mkdir /tmp/argo-review
-cd /tmp/argo-review
+mkdir -p ~/deleteme/argo-review
+cd ~/deleteme/argo-review
 
 # Clone repo
 git clone https://gitea-gitea.apps.<domain>/gitea/demo-argo.git
@@ -341,7 +341,7 @@ Create argoCD application:
     - Mark - Self Heal 
 - Source:
     - Repository URL: http://gitea.gitea.svc.cluster.local:3000/gitea/demo-argo.git
-    - Revision: main
+    - Revision: master
     - Path: .
 - Destination:
     - Cluster URL: https://kubernetes.default.svc
@@ -363,7 +363,7 @@ spec:
   source:
     path: '.'
     repoURL: http://gitea.gitea.svc.cluster.local:3000/gitea/demo-argo.git
-    targetRevision: main
+    targetRevision: master
   project: default
   syncPolicy:
     automated:
@@ -378,7 +378,7 @@ Play with applications resources (replicas, configuration,...) and see how ArgoC
 Clone the repository `clbartolome/helm-charts` and review `basic-config` chart:
 
 ```sh
-cd /tmp/argo-review
+cd ~/deleteme/argo-review
 
 git clone https://github.com/clbartolome/helm-charts
 
@@ -423,7 +423,7 @@ Deploy Application using helm and play with it:
 
 ```sh
 # Access helm-demo project
-oc project argo-helm
+oc project demo-helm
 
 # Install app and review in OpenShift
 helm install -f values.yaml helm-demo .
@@ -455,7 +455,7 @@ oc get route gitea -n gitea
 Clone repository:
 
 ```sh
-cd /tmp/argo-review
+cd ~/deleteme/argo-review
 git clone https://gitea-gitea.apps.<domain>/gitea/demo-helm.git
 
 cd demo-helm
@@ -523,7 +523,7 @@ Create argoCD application:
   - Mark - Self Heal 
 - Source:
   - Repository URL: http://gitea.gitea.svc.cluster.local:3000/gitea/demo-helm.git
-  - Revision: main
+  - Revision: master
   - Path: .
 - Destination:
   - Cluster URL: https://kubernetes.default.svc
@@ -547,7 +547,7 @@ spec:
   source:
     path: .
     repoURL: http://gitea.gitea.svc.cluster.local:3000/gitea/demo-helm.git
-    targetRevision: main
+    targetRevision: master
     helm:
       valueFiles:
         - values.yaml
@@ -575,7 +575,7 @@ oc get route gitea -n gitea
 Clone repository:
 
 ```sh
-cd /tmp/argo-review
+cd ~/deleteme/argo-review
 git clone https://gitea-gitea.apps.<domain>/gitea/demo-kustomize.git
 
 cd demo-kustomize
@@ -592,7 +592,49 @@ kustomize build overlays/dev
 # Review resources
 ```
 
-TODO: Create Argo Application
+Create argoCD application:
+
+- `+ New App`
+- General:
+  - Application Name: demo-kustomize
+  - Project Name: default
+  - Sync Policy: Automatic
+  - Mark - Prune Resources 
+  - Mark - Self Heal 
+- Source:
+  - Repository URL: http://gitea.gitea.svc.cluster.local:3000/gitea/demo-kustomize.git
+  - Revision: master
+  - Path: overlays/dev
+- Destination:
+  - Cluster URL: https://kubernetes.default.svc
+  - Namespace: argo-kustomize
+- Helm:
+  - Values files: values.yaml
+- `Create`
+
+Alternatively use this yaml:
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: demo-kustomize
+spec:
+  destination:
+    name: ''
+    namespace: demo-kustomize
+    server: https://kubernetes.default.svc
+  source:
+    path: overlays/dev
+    repoURL: http://gitea.gitea.svc.cluster.local:3000/gitea/demo-kustomize.git
+    targetRevision: master
+  sources: []
+  project: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+```
 
 
 
