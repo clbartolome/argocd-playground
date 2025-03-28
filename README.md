@@ -777,3 +777,94 @@ git push
 
 Go to ArgoCD and refresh application
 
+## 7. App of Apps
+
+Access gitea:
+
+```sh
+# Get route
+oc get route gitea -n gitea
+
+# Access via web browser (user: gitea | pass: openshift)
+```
+
+Clone repository:
+
+```sh
+cd ~/deleteme/argo-review
+git clone https://gitea-gitea.apps.<domain>/gitea/demo-app-of-apps.git
+
+cd demo-app-of-apps
+```
+
+Review repository for managing App of Apps:
+
+- Environments (helm)
+- Apps Folder
+
+Create argoCD application:
+
+- `+ New App`
+- General:
+    - Application Name: demo-app-of-apps
+    - Project Name: default
+    - Sync Policy: Automatic
+    - Mark - Prune Resources 
+    - Mark - Self Heal 
+- Source:
+    - Repository URL: http://gitea.gitea.svc.cluster.local:3000/gitea/demo-app-of-apps.git
+    - Revision: master
+    - Path: apps
+- Destination:
+    - Cluster URL: https://kubernetes.default.svc
+    - Namespace: demo-app-of-apps
+- `Create`
+
+Alternatively use this yaml:
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: demo-app-of-apps
+spec:
+  destination:
+    name: ''
+    namespace: demo-app-of-apps
+    server: https://kubernetes.default.svc
+  source:
+    path: 'apps'
+    repoURL: http://gitea.gitea.svc.cluster.local:3000/gitea/demo-app-of-apps.git
+    targetRevision: master
+  project: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+```
+
+Review deployment in ArgoCD and OpenShift console
+
+Add a test app:
+
+```sh
+# Copy prod or dev environment
+cp apps/dev.yaml apps/test.yaml
+
+# change environment
+sed -i 's/dev/test/g' apps/test.yaml
+```
+
+Commit and push changes:
+
+```sh
+git add .
+git commit -m "test environment"
+git push
+```
+
+Access ArgoCD and refresh `demo-app-of-apps` to view how test environment is created
+
+
+
+
