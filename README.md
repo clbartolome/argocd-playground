@@ -19,10 +19,9 @@ Workshop details:
 
 [6. Kustomize Review](#6-kustomize-review)
 
+[7. Bitwarden Review](#7-bitwarden-review)
 
-- Helm Review
-- Kustomize Review
-- Vault Review
+
 - App of apps
 - App Sets
 
@@ -636,8 +635,145 @@ spec:
       selfHeal: true
 ```
 
+## 7. Bitwarden Review
 
+Access gitea:
 
+```sh
+# Get route
+oc get route gitea -n gitea
 
+# Access via web browser (user: gitea | pass: openshift)
+```
 
+Clone repository:
+
+```sh
+cd ~/deleteme/argo-review
+git clone https://gitea-gitea.apps.<domain>/gitea/demo-bitwardem.git
+
+cd demo-kustomize
+```
+
+Review Bitwarden configuration:
+
+- Project for storing secrets
+- APP_SECRET (copy ID)
+- Machine accounts for connecting from openshift bitwarden operator:
+  - Show projects
+  - People
+  - Access tokens
+
+Review access token in `demo-bitwarden` namespace:
+
+```yaml
+oc project demo-bitwarden
+
+# Get secret
+oc get secret bw-auth-token
+```
+
+Create a Bitwarden secret named `bw-secret.yaml`:
+
+```yaml
+apiVersion: k8s.bitwarden.com/v1
+kind: BitwardenSecret
+metadata:
+  labels:
+    app.kubernetes.io/name: bitwardensecret
+    app.kubernetes.io/instance: bitwardensecret
+    app.kubernetes.io/part-of: sm-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: sm-operator
+  name: bw-secret
+spec:
+  organizationId: <update this value>
+  secretName: demo-app-sec
+  map:
+    - bwSecretId: <update this value>
+      secretKeyName: APP_SECRET
+  authToken:
+    secretName: bw-auth-token
+    secretKey: token
+```
+
+Commit and push changes:
+
+```sh
+git add .
+git commit -m "bitwarden secrets"
+git push
+```
+
+Create argoCD application:
+
+- `+ New App`
+- General:
+    - Application Name: demo-bitwarden
+    - Project Name: default
+    - Sync Policy: Automatic
+    - Mark - Prune Resources 
+    - Mark - Self Heal 
+- Source:
+    - Repository URL: http://gitea.gitea.svc.cluster.local:3000/gitea/demo-bitwarden.git
+    - Revision: master
+    - Path: .
+- Destination:
+    - Cluster URL: https://kubernetes.default.svc
+    - Namespace: demo-bitwarden
+- `Create`
+
+Alternatively use this yaml:
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: demo-bitwarden
+spec:
+  destination:
+    name: ''
+    namespace: demo-bitwarden
+    server: https://kubernetes.default.svc
+  source:
+    path: '.'
+    repoURL: http://gitea.gitea.svc.cluster.local:3000/gitea/demo-bitwarden.git
+    targetRevision: master
+  project: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+```
+
+Review resources in argo and generated secrets:
+
+```sh
+# Review secrets
+oc get secrets
+
+oc get secret demo-app-sec -o yaml
+
+echo <secret-value> | base64 -d 
+```
+
+Copy deploy resources for testing this secret:
+
+```sh
+# Copy resources
+cp -r ../demo-argo/* .
+
+# Remove secret
+rm secret.yaml
+```
+
+Commit and push changes:
+
+```sh
+git add .
+git commit -m "bitwarden secrets"
+git push
+```
+
+Go to ArgoCD and refresh application
 
