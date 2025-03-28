@@ -1,0 +1,33 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: demo-app
+  namespace: openshift-gitops
+spec:
+  goTemplate: true
+  generators:
+    - git:
+        repoURL: http://gitea.gitea.svc.cluster.local:3000/gitea/demo-app-sets.git
+        revision: master
+        files:
+          - path: environments/*.json
+  template:
+    metadata:
+      name: '{{ .argo.name }}'
+      namespace: openshift-gitops
+    spec:
+      project: default
+      source:
+        repoURL: '{{ .chart.repo }}'
+        chart: '{{ .chart.name }}'
+        targetRevision: '{{ .chart.version }}'
+        helm:
+          values: |
+            {{ toYaml .values | nindent 12 }}
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{ .argo.namespace }}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true

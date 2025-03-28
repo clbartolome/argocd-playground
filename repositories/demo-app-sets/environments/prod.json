@@ -1,0 +1,32 @@
+{
+  "argo": {
+    "name": "demo-app-prod",
+    "namespace": "demo-prod"
+  },
+  "chart": {
+    "repo": "https://clbartolome.github.io/helm-charts",
+    "name": "basic-config",
+    "version": "1.0.0"
+  },
+  "values": {
+    "name": "demo-app-prod",
+    "image": "quay.io/calopezb/argo-demo-app:1.0",
+    "replicas": 3,
+    "port": 8080,
+    "routeEnabled": true,
+    "config": {
+      "enabled": true,
+      "data": {
+        "APP_ENVIRONMENT": "OpenShift PROD",
+        "APP_NAME": "Demo App",
+        "APP_VERSION": "1.0"
+      }
+    },
+    "secret": {
+      "enabled": true,
+      "data": {
+        "APP_SECRET": "shhh from PROD!!"
+      }
+    }
+  }
+}

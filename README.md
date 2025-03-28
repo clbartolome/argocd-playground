@@ -21,9 +21,10 @@ Workshop details:
 
 [7. Bitwarden Review](#7-bitwarden-review)
 
+[8. App of Apps Review](#8-app-of-apps-review)
 
-- App of apps
-- App Sets
+[9. App Sets Review](#9-app-sets-review)
+
 
 ## Playground Setup
 
@@ -777,7 +778,7 @@ git push
 
 Go to ArgoCD and refresh application
 
-## 7. App of Apps
+## 8. App of Apps Review
 
 Access gitea:
 
@@ -817,7 +818,7 @@ Create argoCD application:
     - Path: apps
 - Destination:
     - Cluster URL: https://kubernetes.default.svc
-    - Namespace: demo-app-of-apps
+    - Namespace: openshift-gitops
 - `Create`
 
 Alternatively use this yaml:
@@ -830,7 +831,7 @@ metadata:
 spec:
   destination:
     name: ''
-    namespace: demo-app-of-apps
+    namespace: openshift-gitops
     server: https://kubernetes.default.svc
   source:
     path: 'apps'
@@ -864,6 +865,94 @@ git push
 ```
 
 Access ArgoCD and refresh `demo-app-of-apps` to view how test environment is created
+
+## 9. App Sets Review
+
+Delete App of Apps ArgoCD Application.
+
+Access gitea:
+
+```sh
+# Get route
+oc get route gitea -n gitea
+
+# Access via web browser (user: gitea | pass: openshift)
+```
+
+Clone repository:
+
+```sh
+cd ~/deleteme/argo-review
+git clone https://gitea-gitea.apps.<domain>/gitea/demo-app-sets.git
+
+cd demo-app-sets
+```
+
+Review repository for managing App of Apps:
+
+- Environments (helm)
+- Apps Folder
+
+Create argoCD application:
+
+- `+ New App`
+- General:
+    - Application Name: demo-app-sets
+    - Project Name: default
+    - Sync Policy: Automatic
+    - Mark - Prune Resources 
+    - Mark - Self Heal 
+- Source:
+    - Repository URL: http://gitea.gitea.svc.cluster.local:3000/gitea/demo-app-sets.git
+    - Revision: master
+    - Path: app-sets
+- Destination:
+    - Cluster URL: https://kubernetes.default.svc
+    - Namespace: openshift-gitops
+- `Create`
+
+Alternatively use this yaml:
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: demo-app-sets
+spec:
+  destination:
+    name: ''
+    namespace: dopenshift-gitops
+    server: https://kubernetes.default.svc
+  source:
+    path: 'app-sets'
+    repoURL: http://gitea.gitea.svc.cluster.local:3000/gitea/demo-app-sets.git
+    targetRevision: master
+  project: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+```
+
+Review deployment in ArgoCD and OpenShift console
+
+Add a test app:
+
+```sh
+cp environments/dev.json environments/test.json
+sed -i 's/dev/test/g' environments/test.json
+sed -i 's/DEV/TEST/g' environments/test.json
+```
+
+Commit and push changes:
+
+```sh
+git add .
+git commit -m "test environment"
+git push
+```
+
+Access ArgoCD and refresh `demo-app-sets` to view how test environment is created (use sync with server-side apply)
 
 
 
