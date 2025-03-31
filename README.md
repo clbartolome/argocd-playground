@@ -27,6 +27,8 @@ Workshop details:
 
 [10. Advanced Sync](#10-advanced-sync)
 
+[11. Blue Green](#11-blue-green)
+
 
 ## Playground Setup
 
@@ -908,7 +910,7 @@ Create argoCD application:
     - Path: .
 - Destination:
     - Cluster URL: https://kubernetes.default.svc
-    - Namespace: openshift-gitops
+    - Namespace: demo-advanced-sync
 - `Create`
 
 Alternatively use this yaml:
@@ -921,7 +923,7 @@ metadata:
 spec:
   destination:
     name: ''
-    namespace: dopenshift-gitops
+    namespace: demo-advanced-sync
     server: https://kubernetes.default.svc
   source:
     path: '.'
@@ -952,3 +954,146 @@ Sync manually again to review the process:
 
 pre-sync >> cm + first hello >> second hello >> syncfail handler
 
+## 11. Blue Green
+
+Create a new version for new configurarion, open `demo-app/src/main/resources/application.properties` and update:
+
+```
+...
+app.feature.toggle=true
+...
+```
+
+Build application 2.0 (native build) and upload into Quay.io
+
+```sh
+# Compile and create image
+mvn -f demo-app package -Pnative -Dquarkus.native.container-build=true
+podman build -f demo-app/src/main/docker/Dockerfile.native -t argo-demo-app:2.0 demo-app
+
+# Review Image
+podman images argo-demo-app
+
+# Push into Quay
+podman tag argo-demo-app:2.0 quay.io/calopezb/argo-demo-app:2.0
+podman push quay.io/calopezb/argo-demo-app:2.0
+```
+
+Clone repository:
+
+```sh
+cd ~/deleteme/argo-review
+git clone https://gitea-gitea.apps.<domain>/gitea/demo-blue-green.git
+
+cd demo-blue-green
+```
+
+Review repository for blue-green:
+
+- CM (for v1)
+- SVCs (same pod selector, argo handles this)
+- Rollout (just v1)
+
+Configure a rollout manager at cluster level:
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: RolloutManager
+metadata:
+  name: rollout-manager
+  namespace: openshift-gitops
+```
+
+Create argoCD application:
+
+- `+ New App`
+- General:
+    - Application Name: demo-blue-green
+    - Project Name: default
+    - Sync Policy: Automatic
+    - Mark - Prune Resources 
+    - Mark - Self Heal 
+- Source:
+    - Repository URL: http://gitea.gitea.svc.cluster.local:3000/gitea/demo-blue-green.git
+    - Revision: master
+    - Path: .
+- Destination:
+    - Cluster URL: https://kubernetes.default.svc
+    - Namespace: demo-blue-green
+- `Create`
+
+Alternatively use this yaml:
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: demo-blue-green
+spec:
+  destination:
+    name: ''
+    namespace: demo-blue-green
+    server: https://kubernetes.default.svc
+  source:
+    path: '.'
+    repoURL: http://gitea.gitea.svc.cluster.local:3000/gitea/demo-blue-green.git
+    targetRevision: master
+  project: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+```
+
+Review and test deployment of version 1 in Argo.
+
+Create a configuration map `cm-2-0.yaml` for verion 2:
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: demo-app-config-2-0
+data:
+  APP_ENVIRONMENT: OpenShift (demo-blue-green namespace)
+  APP_NAME: Demo App Dev
+  APP_VERSION: "2.0"
+```
+
+Modify Image in `rollout.yaml` to version 2.0:
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: demo-app
+spec:
+...
+  template:
+...
+    spec:
+      containers:
+      - name: demo-app
+        image: quay.io/calopezb/argo-demo-app:1.0
+...
+        envFrom:
+        - configMapRef:
+            name: demo-app-config-1-0
+...
+```
+
+Commit and push changes:
+
+```sh
+git add .
+git commit -m "version 2.0 ready"
+git push
+```
+
+Review:
+
+- App 1.0 still with traffic
+- App 2.0 recheable for testing via svc `demo-app-preview`
+- Execute rollout in ArgoCD
+- Review App 2.0 with real traffic and right configuration
+- Review no version 1.0 pods running

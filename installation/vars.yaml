@@ -10,6 +10,7 @@ namespaces:
   - name: demo-test
   - name: demo-prod
   - name: demo-advanced-sync
+  - name: demo-blue-green
 
 kubeconfig:
   ocp_domain: "{{ ocp_host }}"
@@ -52,6 +53,10 @@ gitea:
       url: https://github.com/clbartolome/argocd-playground.git
       branch: master
       path: "/repositories/demo-advanced-sync"
+    - name: demo-blue-green
+      url: https://github.com/clbartolome/argocd-playground.git
+      branch: master
+      path: "/repositories/demo-blue-green"
   users: []
 
 argo:
@@ -65,6 +70,7 @@ argo:
     - name: demo-test
     - name: demo-prod
     - name: demo-advanced-sync
+    - name: demo-blue-green
   environment_repo_url: https://github.com/clbartolome/argocd-playground.git
   environment_repo_revision: master
   environment_path: environment/* # Will create an app for each directory in this path  

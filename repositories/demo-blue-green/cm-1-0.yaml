@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: demo-app-config-1-0
+data:
+  APP_ENVIRONMENT: OpenShift (demo-blue-green namespace)
+  APP_NAME: Demo App Dev
+  APP_VERSION: "1.0"
