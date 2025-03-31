@@ -1074,11 +1074,11 @@ spec:
     spec:
       containers:
       - name: demo-app
-        image: quay.io/calopezb/argo-demo-app:1.0
+        image: quay.io/calopezb/argo-demo-app:2.0
 ...
         envFrom:
         - configMapRef:
-            name: demo-app-config-1-0
+            name: demo-app-config-2-0
 ...
 ```
 
@@ -1097,3 +1097,111 @@ Review:
 - Execute rollout in ArgoCD
 - Review App 2.0 with real traffic and right configuration
 - Review no version 1.0 pods running
+
+## 12. Canary
+
+Clone repository:
+
+```sh
+cd ~/deleteme/argo-review
+git clone https://gitea-gitea.apps.<domain>/gitea/demo-canary.git
+
+cd demo-canary
+```
+
+Review repository for blue-green:
+
+- CM (for v1)
+- SVC (single service, argo handles this)
+- Rollout (just v1 with manual canary deployment)
+
+Create argoCD application:
+
+- `+ New App`
+- General:
+    - Application Name: demo-canary
+    - Project Name: default
+    - Sync Policy: Automatic
+    - Mark - Prune Resources 
+    - Mark - Self Heal 
+- Source:
+    - Repository URL: http://gitea.gitea.svc.cluster.local:3000/gitea/demo-canary.git
+    - Revision: master
+    - Path: .
+- Destination:
+    - Cluster URL: https://kubernetes.default.svc
+    - Namespace: demo-canary
+- `Create`
+
+Alternatively use this yaml:
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: demo-canary
+spec:
+  destination:
+    name: ''
+    namespace: demo-canary
+    server: https://kubernetes.default.svc
+  source:
+    path: '.'
+    repoURL: http://gitea.gitea.svc.cluster.local:3000/gitea/demo-canary.git
+    targetRevision: master
+  project: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+```
+
+Review and test deployment of version 1 in Argo.
+
+Create a configuration map `cm-2-0.yaml` for verion 2:
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: demo-app-config-2-0
+data:
+  APP_ENVIRONMENT: OpenShift (demo-canary namespace)
+  APP_NAME: Demo App Dev
+  APP_VERSION: "2.0"
+```
+
+Modify Image in `rollout.yaml` to version 2.0:
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: demo-app
+spec:
+...
+  template:
+...
+    spec:
+      containers:
+      - name: demo-app
+        image: quay.io/calopezb/argo-demo-app:2.0
+...
+        envFrom:
+        - configMapRef:
+            name: demo-app-config-2-0
+...
+```
+
+Commit and push changes:
+
+```sh
+git add .
+git commit -m "version 2.0 ready"
+git push
+```
+
+Review:
+
+- Execute rollout in ArgoCD - 10% 50% 100% (test app traffic balance)
+- Review no version 1.0 pods running after rollout completed to 100%
