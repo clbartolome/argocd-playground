@@ -25,6 +25,8 @@ Workshop details:
 
 [9. App Sets Review](#9-app-sets-review)
 
+[10. Advanced Sync](#10-advanced-sync)
+
 
 ## Playground Setup
 
@@ -866,9 +868,7 @@ git push
 
 Access ArgoCD and refresh `demo-app-of-apps` to view how test environment is created
 
-## 9. App Sets Review
-
-Delete App of Apps ArgoCD Application.
+## 10. Advanced Sync
 
 Access gitea:
 
@@ -883,29 +883,29 @@ Clone repository:
 
 ```sh
 cd ~/deleteme/argo-review
-git clone https://gitea-gitea.apps.<domain>/gitea/demo-app-sets.git
+git clone https://gitea-gitea.apps.<domain>/gitea/demo-advanced-sync.git
 
-cd demo-app-sets
+cd demo-advanced-sync
 ```
 
-Review repository for managing App of Apps:
+Review repository for advanced syncs:
 
-- Environments (helm)
-- Apps Folder
+- Waves in cm, first and second deployment
+- Pre-sync job
+- Post-sync job
+- Fail handler job
 
 Create argoCD application:
 
 - `+ New App`
 - General:
-    - Application Name: demo-app-sets
+    - Application Name: demo-advanced-sync
     - Project Name: default
-    - Sync Policy: Automatic
-    - Mark - Prune Resources 
-    - Mark - Self Heal 
+    - Sync Policy: manual
 - Source:
-    - Repository URL: http://gitea.gitea.svc.cluster.local:3000/gitea/demo-app-sets.git
+    - Repository URL: http://gitea.gitea.svc.cluster.local:3000/gitea/demo-advanced-sync.git
     - Revision: master
-    - Path: app-sets
+    - Path: .
 - Destination:
     - Cluster URL: https://kubernetes.default.svc
     - Namespace: openshift-gitops
@@ -917,43 +917,38 @@ Alternatively use this yaml:
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: demo-app-sets
+  name: demo-advanced-sync
 spec:
   destination:
     name: ''
     namespace: dopenshift-gitops
     server: https://kubernetes.default.svc
   source:
-    path: 'app-sets'
-    repoURL: http://gitea.gitea.svc.cluster.local:3000/gitea/demo-app-sets.git
+    path: '.'
+    repoURL: http://gitea.gitea.svc.cluster.local:3000/gitea/demo-advanced-sync.git
     targetRevision: master
   project: default
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
 ```
 
-Review deployment in ArgoCD and OpenShift console
+Access application and sync manually to review the process:
 
-Add a test app:
+pre-sync >> cm + first hello >> second hello >> post-sync
 
-```sh
-cp environments/dev.json environments/test.json
-sed -i 's/dev/test/g' environments/test.json
-sed -i 's/DEV/TEST/g' environments/test.json
+Access first deploy and put a wrong image reference in the deployment:
+
+```yaml
+  ...
+    spec:
+      containers:
+      - name: hello
+        envFrom:
+        - configMapRef:
+            name: config-file
+        image: openshift/hello-openshift-wrong
+  ...
 ```
 
-Commit and push changes:
+Sync manually again to review the process:
 
-```sh
-git add .
-git commit -m "test environment"
-git push
-```
-
-Access ArgoCD and refresh `demo-app-sets` to view how test environment is created (use sync with server-side apply)
-
-
-
+pre-sync >> cm + first hello >> second hello >> syncfail handler
 

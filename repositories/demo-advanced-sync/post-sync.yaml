@@ -2,7 +2,6 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: postsync-hook
-  namespace: hello-argo
   annotations:
     argocd.argoproj.io/hook: PostSync
 spec:
