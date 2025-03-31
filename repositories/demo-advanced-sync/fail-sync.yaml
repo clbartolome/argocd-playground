@@ -1,0 +1,14 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: syncfail-handler
+  annotations:
+    argocd.argoproj.io/hook: SyncFail
+spec:
+  template:
+    spec:
+      containers:
+      - name: fail-handler
+        image: registry.redhat.io/ubi9/ubi-minimal@sha256:ac61c96b93894b9169221e87718733354dd3765dd4a62b275893c7ff0d876869
+        command: ["sh", "-c", "echo Sync failed! Capturing failure; sleep 5"]
+      restartPolicy: Never

@@ -1,0 +1,15 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: postsync-hook
+  namespace: hello-argo
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+spec:
+  template:
+    spec:
+      containers:
+      - name: post
+        image: registry.redhat.io/ubi9/ubi-minimal@sha256:ac61c96b93894b9169221e87718733354dd3765dd4a62b275893c7ff0d876869
+        command: ["sh", "-c", "echo Running PostSync Hook; sleep 5; echo Done"]
+      restartPolicy: Never

@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: second-hello
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: second-hello
+  template:
+    metadata:
+      labels:
+        app: second-hello
+    spec:
+      containers:
+      - name: hello
+        envFrom:
+        - configMapRef:
+            name: config-file
+        image: openshift/hello-openshift
+        command: ["/bin/sh", "-c"]
+        args:
+          - echo Sleeping for 10s before starting app...;
+            sleep 10;
+            /hello-openshift;
+        ports:
+        - containerPort: 8080
