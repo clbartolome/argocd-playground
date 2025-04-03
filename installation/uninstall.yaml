@@ -17,24 +17,34 @@
         namespace: openshift-gitops
         name: environment
 
-    # - name: Remove demo environment on ArgoCD
-    #   kubernetes.core.k8s:
-    #     state: absent
-    #     api_version: argoproj.io/v1alpha1
-    #     kind: Application
-    #     namespace: openshift-gitops
-    #     name: payment
+    - name: Remove demo environment on ArgoCD
+      kubernetes.core.k8s:
+        state: absent
+        api_version: argoproj.io/v1alpha1
+        kind: Application
+        namespace: openshift-gitops
+        name: "{{ item }}"
+      ignore_errors: true
+      loop:
+        - demo-argo
+        - demo-helm
+        - demo-kustomize
+        - demo-bitwarden
+        - demo-app-of-apps
+        - demo-app-sets
+        - demo-advanced-sync
+        - demo-blue-green
+        - demo-canary
 
-    # - name: Small pause # (TODO: use argoCD instead of this sh**)
-    #   ansible.builtin.pause:
-    #     minutes: 1
+    - name: Small pause # (TODO: use argoCD instead of this sh**)
+      ansible.builtin.pause:
+        minutes: 1
 
     - name: Remove Bitwarden
       ansible.builtin.include_role:
         name: demos.utils.bitwarden
       vars:
         bitwarden_operation: uninstall
-
 
     - name: Delete Demo namespaces
       kubernetes.core.k8s:
@@ -45,6 +55,7 @@
           metadata:
             name: "{{ namespace.name }}"
       loop: "{{ namespaces }}"
+      ignore_errors: true
       loop_control:
         loop_var: namespace
 

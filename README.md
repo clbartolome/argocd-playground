@@ -29,6 +29,8 @@ Workshop details:
 
 [11. Blue Green](#11-blue-green)
 
+[12. Canary](#12-canary)
+
 
 ## Playground Setup
 
@@ -869,6 +871,95 @@ git push
 ```
 
 Access ArgoCD and refresh `demo-app-of-apps` to view how test environment is created
+
+## 9. App Sets Review
+
+Access gitea:
+
+```sh
+# Get route
+oc get route gitea -n gitea
+
+# Access via web browser (user: gitea | pass: openshift)
+```
+
+Clone repository:
+
+```sh
+cd ~/deleteme/argo-review
+git clone https://gitea-gitea.apps.<domain>/gitea/demo-app-sets.git
+
+cd demo-app-sets
+```
+
+Review repository for managing App Sets:
+
+- Environments (helm)
+- Apps Folder
+
+Create argoCD application:
+
+- `+ New App`
+- General:
+    - Application Name: demo-app-sets
+    - Project Name: default
+    - Sync Policy: Automatic
+    - Mark - Prune Resources 
+    - Mark - Self Heal 
+- Source:
+    - Repository URL: http://gitea.gitea.svc.cluster.local:3000/gitea/demo-app-sets.git
+    - Revision: master
+    - Path: app-sets
+- Destination:
+    - Cluster URL: https://kubernetes.default.svc
+    - Namespace: openshift-gitops
+- `Create`
+
+Alternatively use this yaml:
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: demo-app-sets
+spec:
+  destination:
+    name: ''
+    namespace: openshift-gitops
+    server: https://kubernetes.default.svc
+  source:
+    path: 'apps'
+    repoURL: http://gitea.gitea.svc.cluster.local:3000/gitea/demo-app-sets.git
+    targetRevision: master
+  project: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+```
+
+Review deployment in ArgoCD and OpenShift console
+
+Add a test app:
+
+```sh
+# Copy prod or dev environment
+cp environments/dev.json environments/test.json
+
+# change environment
+sed -i 's/dev/test/g' environments/test.json
+sed -i 's/DEV/TEST/g' environments/test.json
+```
+
+Commit and push changes:
+
+```sh
+git add .
+git commit -m "test environment"
+git push
+```
+
+Access ArgoCD and refresh `demo-app-sets` to view how test environment is created
 
 ## 10. Advanced Sync
 
