@@ -57,7 +57,7 @@ ansible-builder build -t argo-playground-ee:latest
 ```sh
 export OPENSHIFT_TOKEN=$(oc whoami --show-token)
 export CLUSTER_DOMAIN=$(oc whoami --show-server | sed 's~https://api\.~~' | sed 's~:.*~~')
-export BITWARDEN_TOKEN=<BITWARDEN_TOKEN_HERE>
+export BITWARDEN_TOKEN=0.751a3b7d-493b-466d-ac7f-b2750084ebdd.WmQzCU0avVz5TibxOQiyAf24QHNIqA:y08iPvmZiDFnn8OkpCt6uA==
 ```
 
 - Run installation:
@@ -107,6 +107,8 @@ Run locally:
 
 ```sh
 mvn -f demo-app clean quarkus:dev
+
+# Open http://localhost:8080/q/dev-ui/welcome
 ```
 
 Build application (native build) and upload into Quay.io
@@ -126,10 +128,10 @@ podman push quay.io/calopezb/argo-demo-app:1.0
 
 ## 2. Deploy into OpenShift
 
-Create a namespace and deploy image:
+Access a namespace and deploy image:
 
 ```sh
-# Create project
+# Access project
 oc project demo-app
 
 # Deploy application and create a route
@@ -390,7 +392,7 @@ git clone https://github.com/clbartolome/helm-charts
 
 cd helm-charts/charts/basic-config
 
-code.
+code .
 ```
 
 Create a `values.yaml`:
@@ -928,7 +930,7 @@ spec:
     namespace: openshift-gitops
     server: https://kubernetes.default.svc
   source:
-    path: 'apps'
+    path: 'app-sets'
     repoURL: http://gitea.gitea.svc.cluster.local:3000/gitea/demo-app-sets.git
     targetRevision: master
   project: default
