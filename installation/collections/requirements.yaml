@@ -2,5 +2,5 @@ collections:
   - name: community.general
   - name: https://github.com/zaskan/demos.utils.git
     type: git
-    version: main
+    version: 1.0.2
   - name: kubernetes.core

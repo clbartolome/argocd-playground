@@ -57,7 +57,7 @@ ansible-builder build -t argo-playground-ee:latest
 ```sh
 export OPENSHIFT_TOKEN=$(oc whoami --show-token)
 export CLUSTER_DOMAIN=$(oc whoami --show-server | sed 's~https://api\.~~' | sed 's~:.*~~')
-export BITWARDEN_TOKEN=<BITWARDEN_TOKEN_HERE>
+export BITWARDEN_TOKEN=0.751a3b7d-493b-466d-ac7f-b2750084ebdd.WmQzCU0avVz5TibxOQiyAf24QHNIqA:y08iPvmZiDFnn8OkpCt6uA==
 ```
 
 - Run installation:
@@ -82,6 +82,7 @@ ansible-navigator run ../install.yaml -m stdout \
 ```sh
 export OPENSHIFT_TOKEN=$(oc whoami --show-token)
 export CLUSTER_DOMAIN=$(oc whoami --show-server | sed 's~https://api\.~~' | sed 's~:.*~~')
+export BITWARDEN_TOKEN=0.751a3b7d-493b-466d-ac7f-b2750084ebdd.WmQzCU0avVz5TibxOQiyAf24QHNIqA:y08iPvmZiDFnn8OkpCt6uA==
 ```
 
 - Run cleanup:
@@ -89,7 +90,8 @@ export CLUSTER_DOMAIN=$(oc whoami --show-server | sed 's~https://api\.~~' | sed 
 ```sh
 ansible-navigator run ../uninstall.yaml -m stdout \
     -e "ocp_host=$CLUSTER_DOMAIN" \
-    -e "api_token=$OPENSHIFT_TOKEN"
+    -e "api_token=$OPENSHIFT_TOKEN" \
+    -e "bw_token=$BITWARDEN_TOKEN"
 ```
 
 
